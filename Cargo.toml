@@ -1,0 +1,17 @@
+[package]
+name = "foreign-instruments"
+version = "0.0.1"
+authors = ["styyle14"]
+
+[dependencies]
+libusb = "0.3"
+hidapi = "0.5.0"
+
+[lib]
+name = "foreigninstruments"
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+
+[[bin]]
+name = "foreigninstrumentsd"
+path = "src/main.rs"
