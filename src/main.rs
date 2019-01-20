@@ -5,6 +5,7 @@ use std::time::Duration;
 
 // crates.io crates
 extern crate libusb;
+extern crate crossbeam;
 
 // local crates
 extern crate foreigninstruments;
@@ -27,10 +28,8 @@ fn find_specific_device(device_iter: &libusb::Device<'_>, bus: u8, address: u8, 
 fn spawn_device_thread(bus: u8, address: u8, vid: u16, pid: u16) -> std::thread::JoinHandle<()> {
 	thread::spawn(move || {
 		match libusb::Context::new() {
-			Ok(new_context) => {
-				let context_ref = Arc::new(Mutex::new(new_context));
-				let context_thread = &*context_ref.lock().unwrap();
-				let device = context_thread.devices().unwrap().iter()
+			Ok(context) => {
+				let device = context.devices().unwrap().iter()
 					.find(|di| find_specific_device(&&di, bus, address, vid, pid)).unwrap();
 				let device_desc = device.device_descriptor().unwrap();
 				println!("Bus {:03} Device {:03} ID {:04x}:{:04x}",
@@ -56,13 +55,42 @@ fn spawn_device_thread(bus: u8, address: u8, vid: u16, pid: u16) -> std::thread:
 				} else {
 					println!("Kernel driver is not active.");
 				}
+				handle.reset().expect("Failed to reset USB device.");
 				handle.claim_interface(0).expect("Could not claim interface.");
-				let mut buffer: [u8; 200] = [0; 200];
-				handle.read_interrupt(0x81, &mut buffer, Duration::new(50, 0));
-				let ll = handle.read_languages(Duration::new(5, 0)).expect("test");
-				for l in ll {
-					println!("{:#?}", l);
-				}
+				let handle_ref = Arc::new(handle);
+				crossbeam::thread::scope(|scope| {
+					let handle_ref_read_thread = Arc::clone(&handle_ref);
+					scope.spawn(move |_| {
+						let mut buffer: [u8; 200] = [0; 200];
+						eprintln!("Preparing to read.");
+						match handle_ref_read_thread.read_interrupt(0x81, &mut buffer, Duration::from_secs(std::u64::MAX/1024)) {
+							Ok(num) => {
+								eprintln!("Number bytes read: {:#?}, Byte[0] = {:02x}", num, buffer[0]);
+							},
+							Err(e) => {
+								eprintln!("Error reading device: {}", e);
+							},
+						}
+					});
+					let handle_ref_write_thread = Arc::clone(&handle_ref);
+					scope.spawn(move |_| {
+						let mut buffer: [u8; 60] = [0xff; 60];
+						buffer[0] = 0x80;
+						eprintln!("Preparing to write.");
+						match handle_ref_write_thread.write_interrupt(0x01, &mut buffer, Duration::from_secs(std::u64::MAX/1024)) {
+							Ok(num) => {
+								eprintln!("Number bytes written: {:#?}, Byte[0] = {:02x}", num, buffer[0]);
+							},
+							Err(e) => {
+								eprintln!("Error writing device: {}", e);
+							},
+						}
+					});
+					let ll = handle_ref.read_languages(Duration::new(1, 0)).expect("test");
+					for l in ll {
+						println!("{:#?}", l);
+					}
+				}).unwrap();
 			},
 			Err(e) => {
 				eprintln!("Error opening device: {}", e);
