@@ -4,6 +4,7 @@ version = "0.0.1"
 authors = ["styyle14"]
 
 [dependencies]
+lazy_static = "1.2.0"
 libusb = "0.3"
 crossbeam = "0.6"
 

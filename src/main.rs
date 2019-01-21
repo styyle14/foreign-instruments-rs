@@ -1,5 +1,5 @@
 // std crates
-use std::sync::{Mutex, Arc};
+use std::sync::{Arc};
 use std::thread;
 use std::time::Duration;
 
@@ -11,6 +11,7 @@ extern crate crossbeam;
 extern crate foreigninstruments;
 use foreigninstruments::is_valid_vid_pid_pair;
 
+// ----------------------
 
 fn filter_valid_devices(device_iter: &libusb::Device<'_>) -> bool {
 	let device_desc = device_iter.device_descriptor().unwrap();
@@ -44,7 +45,10 @@ fn spawn_device_thread(bus: u8, address: u8, vid: u16, pid: u16) -> std::thread:
 					for interface_descriptor in interface.descriptors() {
 						println!("Interface Number: {:#?}, Number of Endpoints: {:#?}", interface_descriptor.interface_number(), interface_descriptor.num_endpoints());
 						for endpoint_descriptor in interface_descriptor.endpoint_descriptors() {
-							println!("Endpoint Address: {:#?}, Direction: {:#?}", endpoint_descriptor.address(), endpoint_descriptor.direction());
+							println!("Endpoint Address: {:#?}, Direction: {:#?}",
+								endpoint_descriptor.address(),
+								endpoint_descriptor.direction(),
+							);
 						}
 					}
 				}
