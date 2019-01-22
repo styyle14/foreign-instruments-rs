@@ -1,18 +1,47 @@
+use std::collections::{HashMap,HashSet};
+use std::mem::Discriminant;
+
 #[macro_use]
 extern crate lazy_static;
-use std::collections::HashMap;
+
+mod types;
+use types::foreign_instruments_types::{
+	ForeignInstrumentDetails,
+	BackendAccessor
+};
+
+mod devices;
+use devices::*;
 
 lazy_static! {
-	static ref VID_PID_DEVICE_HASHMAP: HashMap<(u16,u16), &'static str> = {
-		let mut m = HashMap::new();
-		//vid_pid_device_data_hashmap.insert((0x17CC, 0x1340), "foo"); // Komplete Kontrol S25
-		m.insert((0x17CC, 0x1500), "bar"); // Maschine Jam
-		//vid_pid_device_data_hashmap.insert((0x17CC, 0x1700), "baz"); // Maschine Mikro MK3
-		m
+	pub static ref FOREIGN_INSTRUMENT_DETAILS: Vec<ForeignInstrumentDetails> = {
+		vec![
+			native_instruments::komplete_kontrol_s25::details(), // Komplete Kontrol S25
+			native_instruments::maschine_jam::details(), // Maschine Jam
+			//vid_pid_device_data_hashmap.insert((0x17CC, 0x1700), "baz"); // Maschine Mikro MK3
+		]
 	};
 }
 
-pub fn is_valid_vid_pid_pair(v: u16, p: u16) -> bool {
-	//println!("Is valid? ID {:04x}:{:04x}", v, p);
-	VID_PID_DEVICE_HASHMAP.contains_key(&(v,p))
+pub fn get_distinct_backends() -> HashMap<Discriminant<BackendAccessor>,BackendAccessor> {
+	let mut backends = HashMap::new();
+	for instrument_details in FOREIGN_INSTRUMENT_DETAILS.iter() {
+		eprintln!("Finding backends for: {}", instrument_details.name);
+		for accessor_details in instrument_details.accessor_details_list.iter() {
+			let backend = BackendAccessor::new(&accessor_details.backend_device_details);
+			let backend_discriminant = backend.get_discriminant();
+			if ! backends.contains_key(&backend_discriminant) {
+				eprintln!("Adding new backend: {:#?}", backend_discriminant);
+				backends.insert(backend_discriminant, backend);
+			}
+		}
+	}
+	//eprintln!("All backends: {:#?}", backends);
+	backends
 }
+
+//pub fn is_supported_vid_pid_pair(v: u16, p: u16) -> bool {
+	////println!("Is valid? ID {:04x}:{:04x}", v, p);
+	////FOREIGN_INSTRUMENTS.contains_key(&(v,p))
+	//false
+//}
