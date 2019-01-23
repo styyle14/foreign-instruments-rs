@@ -49,4 +49,5 @@ impl BackendAccessor {
 	pub fn get_discriminant(&self) -> Discriminant<BackendAccessor> {
 		discriminant(&self)
 	}
+	//pub initialize(&self) -> Result<()>;
 }

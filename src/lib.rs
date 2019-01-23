@@ -40,6 +40,34 @@ pub fn get_distinct_backends() -> HashMap<Discriminant<BackendAccessor>,BackendA
 	backends
 }
 
+
+pub trait Detector {
+	fn detect_device(&self) -> Box<dyn Accessor>;
+}
+
+pub struct DummyDetector;
+
+impl Detector for DummyDetector {
+	fn detect_device(&self) -> Box<dyn Accessor> {
+		Box::new(
+			DummyAccessor{ }
+		)
+	}
+}
+
+
+pub trait Accessor {
+	fn initialize(&self) -> Result();
+}
+
+pub struct DummyAccessor;
+impl Accessor for DummyAccessor {
+	fn get(&self) -> u8 {
+		9
+	}
+}
+
+
 //pub fn is_supported_vid_pid_pair(v: u16, p: u16) -> bool {
 	////println!("Is valid? ID {:04x}:{:04x}", v, p);
 	////FOREIGN_INSTRUMENTS.contains_key(&(v,p))

@@ -11,7 +11,7 @@ extern crate crossbeam;
 
 // local crates
 extern crate foreigninstruments;
-use foreigninstruments::get_distinct_backends;
+use foreigninstruments::*;
 
 // ----------------------
 
@@ -103,7 +103,9 @@ use foreigninstruments::get_distinct_backends;
 
 fn main() {
 	//get backends list
-	let distinct_backends = get_distinct_backends();
+	//let backends = get_distinct_backends();
+	let detector = DummyDetector { };
+	eprintln!("Num: {}", detector.detect_device().get());
 	// initialize each backend
 	//		generate valid devices list
 	//add each backend to refresh list
