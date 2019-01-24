@@ -104,8 +104,16 @@ use foreigninstruments::*;
 fn main() {
 	//get backends list
 	//let backends = get_distinct_backends();
-	let detector = DummyDetector { };
-	eprintln!("Num: {}", detector.detect_device().get());
+	for instrument in get_foreign_instruments().iter() {
+		match instrument.get_detector() {
+			Ok(detector) => {
+				eprintln!("Found Detector for {}.", instrument.get_name());
+			},
+			Err(e) => {
+				eprintln!("Error getting detector for {}: {}", instrument.get_name(), e);
+			}
+		}
+	}
 	// initialize each backend
 	//		generate valid devices list
 	//add each backend to refresh list

@@ -40,31 +40,68 @@ pub fn get_distinct_backends() -> HashMap<Discriminant<BackendAccessor>,BackendA
 	backends
 }
 
-
+pub trait Instrument {
+	fn get_name(&self) -> String;
+	fn get_detector(&self) -> Result<Box<dyn Detector>, &str>;
+}
 pub trait Detector {
-	fn detect_device(&self) -> Box<dyn Accessor>;
+	fn detect_device(&self) -> Result<Box<dyn Accessor>, &str> ;
+}
+pub trait Accessor {
+	fn initialize(&self) -> bool;
 }
 
-pub struct DummyDetector;
+pub struct ForeignInstrument{
+	name: String,
+	detector: Option<Box<dyn Detector>>
+}
+impl ForeignInstrument {
+	pub fn new() -> ForeignInstrument {
+		ForeignInstrument {
+			name: "Unimplemented ForeignInstrument".to_string(),
+			detector: None
+		}
+	}
+}
+impl Instrument for ForeignInstrument {
+	fn get_name(&self) -> String {
+		self.name.to_string()
+	}
+	fn get_detector(&self) -> Result<Box<dyn Detector>, &str> {
+		Err("No detector implemented for this instrument.")
+	}
+}
 
+pub struct DummyInstrument(ForeignInstrument);
+impl DummyInstrument {
+	fn new() -> ForeignInstrument {
+		ForeignInstrument {
+			name: "Dummy Instrument Dummy".to_string(),
+			detector: Some(Box::new(DummyDetector {}))
+		}
+	}
+}
+pub struct DummyDetector;
 impl Detector for DummyDetector {
-	fn detect_device(&self) -> Box<dyn Accessor> {
-		Box::new(
-			DummyAccessor{ }
+	fn detect_device(&self) -> Result<Box<dyn Accessor>, &str> {
+		Ok(
+			Box::new(
+				DummyAccessor{ }
+			)
 		)
 	}
 }
-
-
-pub trait Accessor {
-	fn initialize(&self) -> Result();
-}
-
 pub struct DummyAccessor;
 impl Accessor for DummyAccessor {
-	fn get(&self) -> u8 {
-		9
+	fn initialize(&self) -> bool {
+		true
 	}
+}
+
+pub fn get_foreign_instruments() -> Vec<Box<Instrument>> {
+	vec![
+		Box::new(DummyInstrument::new())
+	]
 }
 
 
