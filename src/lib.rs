@@ -24,57 +24,47 @@ use devices::*;
 	//backends
 //}
 
+pub trait Detector {
+	fn detect_instrument(&self) -> Option<Box<dyn Instrument>> ;
+}
 pub trait Instrument {
 	fn get_name(&self) -> String;
-	fn get_detector(&self) -> Result<Box<dyn Detector>, &str>;
-}
-pub trait Detector {
-	fn detect_device(&self) -> Result<Box<dyn Accessor>, &str> ;
+	fn get_accessor(&self) -> Option<Box<dyn Accessor>>;
 }
 pub trait Accessor {
 	fn initialize(&self) -> bool;
 }
 
-pub struct ForeignInstrument{
-	name: String,
-	detector: Option<Box<dyn Detector>>
-}
-impl ForeignInstrument {
-	pub fn new() -> ForeignInstrument {
-		ForeignInstrument {
-			name: "Unimplemented ForeignInstrument".to_string(),
-			detector: None
-		}
-	}
-}
-impl Instrument for ForeignInstrument {
-	fn get_name(&self) -> String {
-		self.name.to_string()
-	}
-	fn get_detector(&self) -> Result<Box<dyn Detector>, &str> {
-		Err("No detector implemented for this instrument.")
-	}
-}
 
-pub struct DummyInstrument(ForeignInstrument);
-impl DummyInstrument {
-	fn new() -> ForeignInstrument {
-		ForeignInstrument {
-			name: "Dummy Instrument Dummy".to_string(),
-			detector: Some(Box::new(DummyDetector {}))
-		}
-	}
-}
 pub struct DummyDetector;
 impl Detector for DummyDetector {
-	fn detect_device(&self) -> Result<Box<dyn Accessor>, &str> {
-		Ok(
+	fn detect_instrument(&self) -> Option<Box<dyn Instrument>> {
+		Some(
 			Box::new(
-				DummyAccessor{ }
+				DummyInstrument::new()
 			)
 		)
 	}
 }
+pub struct DummyInstrument {
+	name: String
+}
+impl DummyInstrument {
+	fn new() -> DummyInstrument {
+		DummyInstrument {
+			name: "Dummy Instrument".to_string()
+		}
+	}
+}
+impl Instrument for DummyInstrument {
+	fn get_name(&self) -> String {
+		self.name.to_string()
+	}
+	fn get_accessor(&self) -> Option<Box<dyn Accessor>> {
+		Some(Box::new(DummyAccessor{ }))
+	}
+}
+
 pub struct DummyAccessor;
 impl Accessor for DummyAccessor {
 	fn initialize(&self) -> bool {
@@ -82,9 +72,9 @@ impl Accessor for DummyAccessor {
 	}
 }
 
-pub fn get_foreign_instruments() -> Vec<Box<Instrument>> {
+pub fn get_detectors() -> Vec<Box<Detector>> {
 	vec![
-		Box::new(DummyInstrument::new())
+		Box::new(DummyDetector{ })
 	]
 }
 

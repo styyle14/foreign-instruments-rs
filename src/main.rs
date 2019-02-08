@@ -104,13 +104,21 @@ use foreigninstruments::*;
 fn main() {
 	//get backends list
 	//let backends = get_distinct_backends();
-	for instrument in get_foreign_instruments().iter() {
-		match instrument.get_detector() {
-			Ok(detector) => {
-				eprintln!("Found Detector for {}.", instrument.get_name());
+	for detector in get_detectors().iter() {
+		match detector.detect_instrument() {
+			Some(instrument) => {
+				eprintln!("Found Instrument: {}.", instrument.get_name());
+				match instrument.get_accessor() {
+					Some(accessor) => {
+						eprintln!("Accessor Initialization result: {}", accessor.initialize());
+					},
+					None => {
+						eprintln!("No accessor found.");
+					}
+				}
 			},
-			Err(e) => {
-				eprintln!("Error getting detector for {}: {}", instrument.get_name(), e);
+			None => {
+				eprintln!("No intrument found.");
 			}
 		}
 	}
