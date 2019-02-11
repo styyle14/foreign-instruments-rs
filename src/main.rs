@@ -107,23 +107,38 @@ use foreigninstruments::*;
 	//})
 //}
 
-struct Display;
+struct InstrumentDaemon {
+	detectors: DetectorList,
+}
+impl InstrumentDaemon {
+	fn new() -> InstrumentDaemon {
+		InstrumentDaemon {
+			detectors: get_detectors()
+		}
+	}
+}
 
-impl Future for Display
+impl Future for InstrumentDaemon
 {
 	type Item = ();
 	type Error = ();
 
 	fn poll(&mut self) -> Poll<(), ()> {
 		println!("Hello Tokio!");
+		for detector in self.detectors.iter() {
+			println!("Found detector: {}.", detector.get_name());
+		}
 		Ok(Async::Ready(()))
 	}
 }
 
 fn main() {
-	//get backends list
-	//let backends = get_distinct_backends();
-	tokio::run(Display{ })
+	tokio::run(
+		InstrumentDaemon::new()
+	)
+}
+
+
 		//match (try_ready!(detector.poll())) {
 			//Some(i) => {
 				//eprintln!("Found Instrument.",);
@@ -186,4 +201,3 @@ fn main() {
 	//for jhandle in jhandles {
 		//jhandle.join().expect("Thread did not join().");
 	//}
-}

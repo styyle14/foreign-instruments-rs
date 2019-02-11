@@ -92,7 +92,9 @@ impl Accessor for DummyAccessor {
 	}
 }
 
-pub fn get_detectors() -> Vec<Box<Detector<Item = u8, Error = ()> + Send>> {
+pub type DetectorList = Vec<Box<Detector<Item = u8, Error = ()> + Send>>;
+
+pub fn get_detectors() -> DetectorList {
 	vec![
 		Box::new(DummyDetector::new())
 	]
