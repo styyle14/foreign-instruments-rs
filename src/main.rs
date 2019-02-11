@@ -109,22 +109,23 @@ use foreigninstruments::*;
 
 struct InstrumentDaemon {
 	detectors: DetectorList,
+	instruments: InstrumentList,
 }
 impl InstrumentDaemon {
 	fn new() -> InstrumentDaemon {
 		InstrumentDaemon {
-			detectors: get_detectors()
+			detectors: get_detectors(),
+			instruments: Vec::new()
 		}
 	}
 }
-
 impl Future for InstrumentDaemon
 {
 	type Item = ();
 	type Error = ();
 
 	fn poll(&mut self) -> Poll<(), ()> {
-		println!("Hello Tokio!");
+		println!("Starting Foreign Instruments daemon...");
 		for detector in self.detectors.iter() {
 			println!("Found detector: {}.", detector.get_name());
 		}

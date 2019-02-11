@@ -93,6 +93,7 @@ impl Accessor for DummyAccessor {
 }
 
 pub type DetectorList = Vec<Box<Detector<Item = u8, Error = ()> + Send>>;
+pub type InstrumentList = Vec<Box<Instrument + Send>>;
 
 pub fn get_detectors() -> DetectorList {
 	vec![
