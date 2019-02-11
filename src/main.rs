@@ -107,13 +107,23 @@ use foreigninstruments::*;
 	//})
 //}
 
+struct Display;
+
+impl Future for Display
+{
+	type Item = ();
+	type Error = ();
+
+	fn poll(&mut self) -> Poll<(), ()> {
+		println!("Hello Tokio!");
+		Ok(Async::Ready(()))
+	}
+}
+
 fn main() {
 	//get backends list
 	//let backends = get_distinct_backends();
-	tokio::run(get_detectors().iter().for_each(move |instrument| {
-			eprintln!("Found Instrument.");
-		})
-	)
+	tokio::run(Display{ })
 		//match (try_ready!(detector.poll())) {
 			//Some(i) => {
 				//eprintln!("Found Instrument.",);
