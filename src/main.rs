@@ -5,6 +5,12 @@ use std::time::Duration;
 use std::collections::HashSet;
 use std::mem::discriminant;
 
+#[macro_use]
+extern crate futures;
+use futures::{stream, Future, Stream, Poll, Async};
+extern crate tokio;
+
+
 // crates.io crates
 extern crate libusb;
 extern crate crossbeam;
@@ -104,24 +110,36 @@ use foreigninstruments::*;
 fn main() {
 	//get backends list
 	//let backends = get_distinct_backends();
-	for detector in get_detectors().iter() {
-		match detector.detect_instrument() {
-			Some(instrument) => {
-				eprintln!("Found Instrument: {}.", instrument.get_name());
-				match instrument.get_accessor() {
-					Some(accessor) => {
-						eprintln!("Accessor Initialization result: {}", accessor.initialize());
-					},
-					None => {
-						eprintln!("No accessor found.");
-					}
-				}
-			},
-			None => {
-				eprintln!("No intrument found.");
-			}
-		}
-	}
+	tokio::run(get_detectors().iter().for_each(move |instrument| {
+			eprintln!("Found Instrument.");
+		})
+	)
+		//match (try_ready!(detector.poll())) {
+			//Some(i) => {
+				//eprintln!("Found Instrument.",);
+			//},
+			//None => {
+				//println!("No intrument found.");
+			//}
+		//};
+	//}
+		//match detector.detect_instrument() {
+			//Ok(instrument) => {
+				//eprintln!("Found Instrument: {}.", instrument.get_name());
+				//match instrument.get_accessor() {
+					//Some(accessor) => {
+						//eprintln!("Accessor Initialization result: {}", accessor.initialize());
+					//},
+					//None => {
+						//eprintln!("No accessor found.");
+					//}
+				//}
+			//},
+			//None => {
+				//eprintln!("No intrument found.");
+			//}
+		//}
+	//}
 	// initialize each backend
 	//		generate valid devices list
 	//add each backend to refresh list

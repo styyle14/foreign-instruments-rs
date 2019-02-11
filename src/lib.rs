@@ -4,6 +4,9 @@ use types::foreign_instruments_types::{
 	BackendAccessor
 };
 
+extern crate futures;
+use futures::{Stream, Poll, Async, stream};
+
 mod devices;
 use devices::*;
 
@@ -24,8 +27,9 @@ use devices::*;
 	//backends
 //}
 
-pub trait Detector {
-	fn detect_instrument(&self) -> Option<Box<dyn Instrument>> ;
+pub trait Detector : Stream {
+	fn get_name(&self) -> String;
+	//fn detect_instruments(&mut self) -> Box<dyn Stream<Item = Box<dyn Instrument>, Error = ()>>;
 }
 pub trait Instrument {
 	fn get_name(&self) -> String;
@@ -36,16 +40,32 @@ pub trait Accessor {
 }
 
 
-pub struct DummyDetector;
-impl Detector for DummyDetector {
-	fn detect_instrument(&self) -> Option<Box<dyn Instrument>> {
-		Some(
-			Box::new(
-				DummyInstrument::new()
-			)
-		)
+pub struct DummyDetector{
+	name: String
+}
+impl DummyDetector {
+	fn new() -> DummyDetector {
+		DummyDetector {
+			name: "Dummy Detector".to_string()
+		}
 	}
 }
+impl Detector for DummyDetector {
+	fn get_name(&self) -> String {
+		self.name.to_string()
+	}
+}
+impl Stream for DummyDetector {
+	type Item = u8;
+
+	// The stream will never yield an error
+	type Error = ();
+	
+	fn poll(&mut self) -> Poll<Option<u8>, ()> {
+		Ok(Async::Ready(Some(9)))
+	}
+}
+
 pub struct DummyInstrument {
 	name: String
 }
@@ -72,9 +92,9 @@ impl Accessor for DummyAccessor {
 	}
 }
 
-pub fn get_detectors() -> Vec<Box<Detector>> {
+pub fn get_detectors() -> Vec<Box<Detector<Item = u8, Error = ()> + Send>> {
 	vec![
-		Box::new(DummyDetector{ })
+		Box::new(DummyDetector::new())
 	]
 }
 
