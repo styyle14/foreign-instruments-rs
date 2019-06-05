@@ -46,7 +46,7 @@ pub struct DummyDetector{
 impl DummyDetector {
 	fn new() -> DummyDetector {
 		DummyDetector {
-			name: "Dummy Detector".to_string()
+			name: "Dummy Detectorzzz".to_string()
 		}
 	}
 }
@@ -62,7 +62,7 @@ impl Stream for DummyDetector {
 	type Error = ();
 	
 	fn poll(&mut self) -> Poll<Option<u8>, ()> {
-		Ok(Async::Ready(Some(9)))
+		Ok(Async::Ready(Some(7)))
 	}
 }
 
@@ -92,12 +92,19 @@ impl Accessor for DummyAccessor {
 	}
 }
 
-pub type DetectorList = Vec<Box<Detector<Item = u8, Error = ()> + Send>>;
+//pub type DetectorList = Vec<fn() -> Box<Detector<Item = u8, Error = ()> + Send>>;
+pub type InstrumentBoxed = Box<dyn Instrument>;
+pub type DetectorBoxed = Box<dyn Detector<Item = u8, Error = ()> + Send>;
+pub type DetectorCreatorPair = (&'static str, fn() -> DetectorBoxed);
 pub type InstrumentList = Vec<Box<Instrument + Send>>;
 
-pub fn get_detectors() -> DetectorList {
+fn DummyDetectorBoxedCreator() -> DetectorBoxed {
+	Box::new(DummyDetector::new())
+}
+
+pub fn get_detector_creator_pairs() -> Vec<DetectorCreatorPair> {
 	vec![
-		Box::new(DummyDetector::new())
+		("Dummy Detector", DummyDetectorBoxedCreator)
 	]
 }
 

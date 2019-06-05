@@ -7,7 +7,7 @@ use std::mem::discriminant;
 
 #[macro_use]
 extern crate futures;
-use futures::{stream, Future, Stream, Poll, Async};
+use futures::{stream, sync::mpsc, Future, Stream, Poll, Async, Sink, future::lazy};
 extern crate tokio;
 
 
@@ -107,35 +107,113 @@ use foreigninstruments::*;
 	//})
 //}
 
-struct InstrumentDaemon {
-	detectors: DetectorList,
-	instruments: InstrumentList,
+struct DetectorDescriptor {
+	detector_name: String,
+	detector_creation_function: fn() -> DetectorBoxed,
+	instrument_manager_sender: mpsc::Sender<u8>
 }
-impl InstrumentDaemon {
-	fn new() -> InstrumentDaemon {
-		InstrumentDaemon {
-			detectors: get_detectors(),
-			instruments: Vec::new()
+impl DetectorDescriptor {
+	fn new(detector_name: String, detector_creation_function: fn() -> DetectorBoxed, instrument_manager_sender: mpsc::Sender<u8>) -> DetectorDescriptor {
+		DetectorDescriptor {
+			detector_name,
+			detector_creation_function,
+			instrument_manager_sender
 		}
 	}
 }
-impl Future for InstrumentDaemon
+
+struct InstrumentState {
+	instrument_name: String,
+	active: bool,
+}
+struct InstrumentManager {
+	detector_instrument_receiver: mpsc::Receiver<u8>,
+	instrument_states: Vec<InstrumentState>,
+}
+impl InstrumentManager {
+	fn new(detector_instrument_receiver: mpsc::Receiver<u8>) -> InstrumentManager {
+		InstrumentManager {
+			detector_instrument_receiver,
+			instrument_states: Vec::new(),
+		}
+	}
+}
+
+struct ManagementDaemon {
+	detector_descriptors: Vec<Arc<DetectorDescriptor>>,
+	instrument_manager: Arc<InstrumentManager>,
+	//connector_manager: ConenectorManager,
+	//renderer_manager: RendererManager,
+}
+impl ManagementDaemon {
+	fn new() -> ManagementDaemon {
+		let (tx, rx) = mpsc::channel(1024);
+		ManagementDaemon {
+			detector_descriptors: get_detector_creator_pairs().iter()
+				.map(|(detector_name, detector_creator)| {
+					Arc::new(
+						DetectorDescriptor::new(detector_name.to_string(), *detector_creator, tx.clone())
+					)
+				})
+				.collect(),
+			instrument_manager: Arc::new(InstrumentManager::new(rx)),
+			//connector_manager: ConenectorManager::new(),
+			//renderer_manager: RendererManager::new(),
+		}
+	}
+}
+impl Future for ManagementDaemon
 {
 	type Item = ();
 	type Error = ();
 
 	fn poll(&mut self) -> Poll<(), ()> {
 		println!("Starting Foreign Instruments daemon...");
-		for detector in self.detectors.iter() {
-			println!("Found detector: {}.", detector.get_name());
-		}
+		//let instrument_manager_ptr = Arc::clone(&self.instrument_manager);
+		//tokio::spawn(lazy(move || {
+			//instrument_manager_ptr.detector_instrument_receiver.for_each(|msg| {
+				//println!("Got `{}`", msg);
+				//Ok(())
+			//})
+		//}));
+		self.detector_descriptors.iter().for_each(|detector_descriptor| {
+			println!("Detector Manager Name: {}", detector_descriptor.detector_name);
+			let detector_descriptor_ptr = Arc::clone(detector_descriptor);
+			tokio::spawn(lazy(move || {
+				let sender = &detector_descriptor_ptr.instrument_manager_sender;
+				(detector_descriptor_ptr.detector_creation_function)().for_each(|num| {
+					let num2 = num;
+					sender.send(num2);
+					Ok(())
+				})
+			}));
+		});
+			//let mut detector = detector_creator();
+			//tokio::spawn(lazy( || {
+				//println!("Found detector");
+				//Ok(())
+			//}));
+			//match try_ready!(detector.poll()) {
+				//Some(o) => {
+					//println!("Ready: {}", o);
+				//},
+				//None => {
+					//println!("NoNE");
+				//}
+				////Async::Ready() => {
+					////println!("Async was ready");
+				////},
+				////Async::NotReady() => {
+					////println!("Async was NOT ready");
+				////}
+			//};
 		Ok(Async::Ready(()))
 	}
 }
 
 fn main() {
 	tokio::run(
-		InstrumentDaemon::new()
+		ManagementDaemon::new()
 	)
 }
 
