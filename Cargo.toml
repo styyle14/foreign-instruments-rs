@@ -1,19 +1,11 @@
 [package]
-name = "foreign-instruments"
-version = "0.0.1"
-authors = ["styyle14"]
+name = "foreign_instruments"
+version = "0.1.0"
+authors = ["styyle14 <styyle14@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-futures = "0.1"
-libusb = "0.3"
-crossbeam = "0.6"
-tokio = "0.1"
-
-[lib]
-name = "foreigninstruments"
-crate-type = ["cdylib", "rlib"]
-path = "src/lib.rs"
-
-[[bin]]
-name = "foreigninstrumentsd"
-path = "src/main.rs"
+async-std = { version = "1.0.0" }
+tokio = { version = "0.2", features = ["full"] }
