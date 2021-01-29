@@ -4,15 +4,10 @@ version = "0.0.1"
 authors = ["styyle14"]
 
 [dependencies]
-futures = "0.1"
-libusb = "0.3"
-crossbeam = "0.6"
-tokio = "0.1"
-
-[lib]
-name = "foreigninstruments"
-crate-type = ["cdylib", "rlib"]
-path = "src/lib.rs"
+futures = "*"
+libusb = "*"
+crossbeam = "*"
+tokio = "*"
 
 [[bin]]
 name = "foreigninstrumentsd"
